@@ -1,0 +1,8 @@
+ucli
+pm port-add 33/2 10G NONE
+pm port-add 33/3 10G NONE
+pm an-set 33/2 1
+pm an-set 33/3 1
+pm port-enb -/-
+exit
+exit

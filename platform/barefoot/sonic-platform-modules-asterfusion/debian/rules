@@ -1,0 +1,106 @@
+#!/usr/bin/make -f
+
+export INSTALL_MOD_DIR := extra
+
+PLATFORMS := cx308p-48y-t cx312p-48y-t cx532p-t cx564p-t
+HWSKUS := x86_64-asterfusion_cx308p_48y_t-r0 x86_64-asterfusion_cx312p_48y_t-r0 x86_64-asterfusion_cx532p_t-r0 x86_64-asterfusion_cx564p_t-r0
+PACKAGES := sonic-platform-asterfusion-cx308p-48y-t sonic-platform-asterfusion-cx312p-48y-t sonic-platform-asterfusion-cx532p-t sonic-platform-asterfusion-cx564p-t
+
+KVERSION ?= $(shell uname -r)
+KERNERDIR :=  /lib/modules/$(KVERSION)
+MODULEDIR := $(shell pwd)/modules
+BUILDDIR := $(shell pwd)/build
+
+UTILS := utils
+SERVICE := service
+SCRIPTS := scripts
+
+PYTHON3 ?= python3
+
+CHASSISBLDDIR := $(BUILDDIR)/wheel
+CHASSISSRC := sonic_platform
+CGOSDRVSRC := cgoslx
+SIODRVSRC := superio
+
+%:
+	dh $@ --with systemd,python3 --buildsystem=pybuild
+
+override_dh_auto_build:
+	echo "Building cgos drivers ... $(MODULEDIR)/$(CGOSDRVSRC)"; \
+	echo "Building superio drivers ... $(MODULEDIR)/$(SIODRVSRC)"; \
+	echo "Building chassis wheel ... $(CHASSISBLDDIR)"; \
+	$(PYTHON3) setup.py bdist_wheel -d $(CHASSISBLDDIR); \
+
+override_dh_auto_install:
+	echo "Installing ... $$hwsku -> $$platform -> $$package"; \
+	platform=$(word 1, $(PLATFORMS)); \
+	hwsku=$(word 1, $(HWSKUS)); \
+	package=$(word 1, $(PACKAGES)); \
+	mkdir -p debian/$$package/usr/bin; \
+	mkdir -p debian/$$package/$(KERNERDIR)/$(INSTALL_MOD_DIR); \
+	mkdir -p debian/$$package/usr/local/bin; \
+	mkdir -p debian/$$package/lib/systemd/system; \
+	mkdir -p debian/$$package/lib/x86_64-linux-gnu; \
+	mkdir -p debian/$$package/usr/share/sonic/device/$$hwsku; \
+	cp -r $$platform/$(SCRIPTS)/*         debian/$$package/usr/bin; \
+	cp -r $$platform/$(UTILS)/*           debian/$$package/usr/local/bin; \
+	cp -r $$platform/$(SERVICE)/*.service debian/$$package/lib/systemd/system; \
+	cp -r $(MODULEDIR)/extra/cgosdrv.ko   debian/$$package/$(KERNERDIR)/$(INSTALL_MOD_DIR); \
+	cp -r $(MODULEDIR)/libcgos.so         debian/$$package/lib/x86_64-linux-gnu; \
+	cp -r $(CHASSISBLDDIR)/*              debian/$$package/usr/share/sonic/device/$$hwsku; \
+	\
+	echo "Installing ... $$hwsku -> $$platform -> $$package"; \
+	platform=$(word 2, $(PLATFORMS)); \
+	hwsku=$(word 2, $(HWSKUS)); \
+	package=$(word 2, $(PACKAGES)); \
+	mkdir -p debian/$$package/usr/bin; \
+	mkdir -p debian/$$package/$(KERNERDIR)/$(INSTALL_MOD_DIR); \
+	mkdir -p debian/$$package/usr/local/bin; \
+	mkdir -p debian/$$package/lib/systemd/system; \
+	mkdir -p debian/$$package/usr/share/sonic/device/$$hwsku; \
+	cp -r $$platform/$(SCRIPTS)/*         debian/$$package/usr/bin; \
+	cp -r $$platform/$(UTILS)/*           debian/$$package/usr/local/bin; \
+	cp -r $$platform/$(SERVICE)/*.service debian/$$package/lib/systemd/system; \
+	cp -r $(MODULEDIR)/extra/sio_smbus.ko debian/$$package/$(KERNERDIR)/$(INSTALL_MOD_DIR); \
+	cp -r $(CHASSISBLDDIR)/*              debian/$$package/usr/share/sonic/device/$$hwsku; \
+	\
+	echo "Installing ... $$hwsku -> $$platform -> $$package"; \
+	platform=$(word 3, $(PLATFORMS)); \
+	hwsku=$(word 3, $(HWSKUS)); \
+	package=$(word 3, $(PACKAGES)); \
+	mkdir -p debian/$$package/usr/bin; \
+	mkdir -p debian/$$package/$(KERNERDIR)/$(INSTALL_MOD_DIR); \
+	mkdir -p debian/$$package/usr/local/bin; \
+	mkdir -p debian/$$package/lib/systemd/system; \
+	mkdir -p debian/$$package/lib/x86_64-linux-gnu; \
+	mkdir -p debian/$$package/usr/share/sonic/device/$$hwsku; \
+	cp -r $$platform/$(SCRIPTS)/*         debian/$$package/usr/bin; \
+	cp -r $$platform/$(UTILS)/*           debian/$$package/usr/local/bin; \
+	cp -r $$platform/$(SERVICE)/*.service debian/$$package/lib/systemd/system; \
+	cp -r $(MODULEDIR)/extra/cgosdrv.ko   debian/$$package/$(KERNERDIR)/$(INSTALL_MOD_DIR); \
+	cp -r $(MODULEDIR)/libcgos.so         debian/$$package/lib/x86_64-linux-gnu; \
+	cp -r $(CHASSISBLDDIR)/*              debian/$$package/usr/share/sonic/device/$$hwsku; \
+	\
+	echo "Installing ... $$hwsku -> $$platform -> $$package"; \
+	platform=$(word 4, $(PLATFORMS)); \
+	hwsku=$(word 4, $(HWSKUS)); \
+	package=$(word 4, $(PACKAGES)); \
+	mkdir -p debian/$$package/usr/bin; \
+	mkdir -p debian/$$package/$(KERNERDIR)/$(INSTALL_MOD_DIR); \
+	mkdir -p debian/$$package/usr/local/bin; \
+	mkdir -p debian/$$package/lib/systemd/system; \
+	mkdir -p debian/$$package/lib/x86_64-linux-gnu; \
+	mkdir -p debian/$$package/usr/share/sonic/device/$$hwsku; \
+	cp -r $$platform/$(SCRIPTS)/*         debian/$$package/usr/bin; \
+	cp -r $$platform/$(UTILS)/*           debian/$$package/usr/local/bin; \
+	cp -r $$platform/$(SERVICE)/*.service debian/$$package/lib/systemd/system; \
+	cp -r $(MODULEDIR)/extra/cgosdrv.ko   debian/$$package/$(KERNERDIR)/$(INSTALL_MOD_DIR); \
+	cp -r $(MODULEDIR)/libcgos.so         debian/$$package/lib/x86_64-linux-gnu; \
+	cp -r $(CHASSISBLDDIR)/*              debian/$$package/usr/share/sonic/device/$$hwsku; \
+
+override_dh_usrlocal:
+
+override_dh_clean:
+	dh_clean; \
+	rm -rf $(BUILDDIR); \
+	rm -rf *.egg-info;

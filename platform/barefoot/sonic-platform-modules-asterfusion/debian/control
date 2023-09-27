@@ -1,0 +1,27 @@
+Source:  sonic-platform-modules-asterfusion
+Section: main
+Priority: extra
+Maintainer: Asterfusion SONiC Team <Yorke.Yuan@asterfusion.com>
+Build-Depends: debhelper (>= 8.0.0), python3
+Standards-Version: 1.0.0
+
+
+Package: sonic-platform-asterfusion-cx308p-48y-t
+Architecture: amd64
+Depends: linux-image-5.10.0-8-2-amd64-unsigned
+Description: This package contains CX308P-48Y platform driver utility for SONiC project
+
+Package: sonic-platform-asterfusion-cx312p-48y-t
+Architecture: amd64
+Depends: linux-image-5.10.0-8-2-amd64-unsigned
+Description: This package contains CX312P-48Y platform driver utility for SONiC project
+
+Package: sonic-platform-asterfusion-cx564p-t
+Architecture: amd64
+Depends: linux-image-5.10.0-8-2-amd64-unsigned
+Description: This package contains CX564P platform driver utility for SONiC project
+
+Package: sonic-platform-asterfusion-cx532p-t
+Architecture: amd64
+Depends: linux-image-5.10.0-8-2-amd64-unsigned
+Description: This package contains CX532P platform driver utility for SONiC project
