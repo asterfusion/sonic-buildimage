@@ -1,0 +1,10 @@
+Ethernet100     GHC1_port0
+Ethernet104     GHC1_port1
+Ethernet108     GHC1_port2 
+Ethernet109     GHC1_port3
+Ethernet110     GHC1_port4
+Ethernet112     GHC0_port0
+Ethernet116     GHC0_port1
+Ethernet120     GHC0_port2
+Ethernet121     GHC0_port3
+Ethernet122     GHC0_port4

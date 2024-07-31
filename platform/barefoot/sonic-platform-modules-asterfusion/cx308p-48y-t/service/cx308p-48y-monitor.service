@@ -1,0 +1,14 @@
+[Unit]
+Description=Setting up Asterfusion CX308P-48Y
+After=sysinit.target
+Requires=systemd-modules-load.service
+After=systemd-modules-load.service
+Before=sysvinit.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/cx308p_48y_monitor.sh start
+
+[Install]
+WantedBy=multi-user.target
