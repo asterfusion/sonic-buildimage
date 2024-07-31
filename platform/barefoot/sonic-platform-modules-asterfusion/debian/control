@@ -8,25 +8,26 @@ Standards-Version: 1.0.0
 
 Package: sonic-platform-asterfusion-cx308p-48y-t
 Architecture: amd64
-Depends: linux-image-5.10.0-18-2-amd64-unsigned
+Depends: ${python3:Depends}, ${misc:Depends}
 Description: This package contains CX308P-48Y platform driver utility for SONiC project
 
 Package: sonic-platform-asterfusion-cx312p-48y-t
 Architecture: amd64
-Depends: linux-image-5.10.0-18-2-amd64-unsigned
+Depends: ${python3:Depends}, ${misc:Depends}
 Description: This package contains CX312P-48Y platform driver utility for SONiC project
 
 Package: sonic-platform-asterfusion-cx564p-t
 Architecture: amd64
-Depends: linux-image-5.10.0-18-2-amd64-unsigned
+Depends: ${python3:Depends}, ${misc:Depends}
 Description: This package contains CX564P platform driver utility for SONiC project
 
 Package: sonic-platform-asterfusion-cx532p-t
 Architecture: amd64
-Depends: linux-image-5.10.0-18-2-amd64-unsigned
+Depends: ${python3:Depends}, ${misc:Depends}
 Description: This package contains CX532P platform driver utility for SONiC project
 
 Package: sonic-platform-asterfusion-cx732q-t
 Architecture: amd64
-Depends: linux-image-5.10.0-18-2-amd64-unsigned
+Depends: ${python3:Depends}, ${misc:Depends}
 Description: This package contains CX732Q platform driver utility for SONiC project
+
