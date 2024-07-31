@@ -21,7 +21,8 @@ RUN apt-get install -y \
         libunwind8-dev \
         libc-ares2 \
         libedit2 \
-        libgoogle-perftools4
+        libgoogle-perftools4 \
+        libi2c0
 
 RUN dpkg -i \
 {% for deb in docker_syncd_bfn_debs.split(' ') -%}
