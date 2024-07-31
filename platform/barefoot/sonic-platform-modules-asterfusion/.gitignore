@@ -1,0 +1,3 @@
+# Don't ignore kernel module
+!modules/**/*.ko
+!modules/**/*.so

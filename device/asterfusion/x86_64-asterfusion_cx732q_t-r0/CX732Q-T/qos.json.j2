@@ -1,0 +1,139 @@
+{# Default values which will be used if no actual configura available #}
+
+{% set default_ports_num = 34 -%}
+{# Generate list of ports if not defined #}
+{% if PORT is not defined %}
+    {% set PORT = [] %}
+    {% for port_idx in range(0,default_ports_num) %}
+        {% if PORT.append("Ethernet%d" % (port_idx*4)) %}{% endif %}
+    {% endfor %}
+{% endif -%}
+
+{
+   "TC_TO_QUEUE_MAP":{
+        "default":{
+            "0":"0",
+            "1":"1",
+            "2":"2",
+            "3":"3",
+            "4":"4",
+            "5":"5",
+            "6":"6",
+            "7":"7"
+        }
+    },
+    "TC_TO_PRIORITY_GROUP_MAP": {
+        "default": {
+            "0": "0",
+            "1": "0",
+            "2": "0",
+            "3": "3",
+            "4": "4",
+            "5": "0",
+            "6": "0",
+            "7": "7"
+        }
+    },
+    "DSCP_TO_TC_MAP": {
+        "default": {
+            "0":"0",
+            "1":"0",
+            "2":"0",
+            "3":"0",
+            "4":"0",
+            "5":"0",
+            "6":"0",
+            "7":"0",
+            "8":"1",
+            "9":"1",
+            "10":"1",
+            "11":"1",
+            "12":"1",
+            "13":"1",
+            "14":"1",
+            "15":"1",
+            "16":"2",
+            "17":"2",
+            "18":"2",
+            "19":"2",
+            "20":"2",
+            "21":"2",
+            "22":"2",
+            "23":"2",
+            "24":"3",
+            "25":"3",
+            "26":"3",
+            "27":"3",
+            "28":"3",
+            "29":"3",
+            "30":"3",
+            "31":"3",
+            "32":"4",
+            "33":"4",
+            "34":"4",
+            "35":"4",
+            "36":"4",
+            "37":"4",
+            "38":"4",
+            "39":"4",
+            "40":"5",
+            "41":"5",
+            "42":"5",
+            "43":"5",
+            "44":"5",
+            "45":"5",
+            "46":"5",
+            "47":"5",
+            "48":"6",
+            "49":"6",
+            "50":"6",
+            "51":"6",
+            "52":"6",
+            "53":"6",
+            "54":"6",
+            "55":"6",
+            "56":"7",
+            "57":"7",
+            "58":"7",
+            "59":"7",
+            "60":"7",
+            "61":"7",
+            "62":"7",
+            "63":"7"
+        }
+    },
+    "MAP_PFC_PRIORITY_TO_QUEUE": {
+        "default": {
+            "0": "0", 
+            "1": "1", 
+            "2": "2", 
+            "3": "3", 
+            "4": "4", 
+            "5": "5", 
+            "6": "6", 
+            "7": "7"
+        }
+    },
+    "PFC_PRIORITY_TO_PRIORITY_GROUP_MAP":{
+        "default":{
+            "3": "3",
+            "4": "4"
+        }
+    },
+    "PORT_QOS_MAP": {
+    {% for port in PORT %}
+       "{{ port }}": {
+            "tc_to_pg_map": "default",
+            "tc_to_queue_map": "default",
+            "dscp_to_tc_map": "default",
+            "pfc_to_queue_map": "default",
+            "pfc_to_pg_map": "default",
+            "pfc_enable": "3,4"
+       {% if loop.index == default_ports_num %}
+        }
+       {% else %}
+        },
+       {% endif %}
+    {% endfor %}
+    }
+}
