@@ -27,7 +27,7 @@ function get_from_bmc_with_delay() {
 function generate_platform_config() {
     # Useful variables
     default_cme="CME3000"
-    default_i2c="255"
+    default_i2c="127"
     hw_platform="N/A"
     hw_version="0"
     enable_uart=0
@@ -149,7 +149,7 @@ function generate_platform_config() {
     fi
 
     if [[ $xt_platform =~ "532" ]]; then
-        enable_iic=0
+        enable_iic=1
         if [[ $default_cme =~ "CME3000" ]]; then
             i2c=$(i2cdetect -l | awk -F '[- ]' '/sio_smbus/{print $2}')
             default_i2c=${i2c:0:1}
@@ -159,7 +159,7 @@ function generate_platform_config() {
     fi
 
     if [[ $xt_platform =~ "564" ]]; then
-        enable_iic=0
+        enable_iic=1
         if [[ $default_cme =~ "CME3000" ]]; then
             i2c=$(i2cdetect -l | awk -F '[- ]' '/sio_smbus/{print $2}')
             default_i2c=${i2c:0:1}
