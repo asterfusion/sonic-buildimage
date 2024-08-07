@@ -11,11 +11,16 @@ try:
 
     from .pltfm_utils.constants import *
     from .pltfm_utils.helper import APIHelper
-    from .pltfm_utils.sonic_xcvr.sfp_optoe_base import SfpOptoeBase
 
     from sonic_platform_base.sonic_sfp.sfputilhelper import SfpUtilHelper
 except ImportError as err:
     raise ImportError(str(err) + "- required module not found")
+
+
+try:
+    from sonic_platform_base.sonic_xcvr.sfp_optoe_base import SfpOptoeBase
+except ImportError:
+    from .pltfm_utils.sonic_xcvr.sfp_optoe_base import SfpOptoeBase
 
 
 class Sfp(SfpOptoeBase):
@@ -46,25 +51,18 @@ class Sfp(SfpOptoeBase):
 
     @property
     def sfp_type(self):
-        default_sfp_type = UNKNOWN_SFP_TYPE
-        if self._port_type == SFP_PORT_TYPE:
-            default_sfp_type =  SFP_TYPE
-        if self._port_type == QSFP_PORT_TYPE:
-            default_sfp_type =  QSFP_TYPE
-        if self._port_type == QSFP_DD_PORT_TYPE:
-            default_sfp_type =  QSFP_DD_TYPE
         if not self._sfp_presence:
-            return default_sfp_type
+            return UNKNOWN_SFP_TYPE
         sfp_id = self.read_eeprom(0, 1)
-        if sfp_id is None or sfp_id == []:
-            return default_sfp_type
+        if not sfp_id:
+            return UNKNOWN_SFP_TYPE
         if sfp_id[0] in (0x03,):
             return SFP_TYPE
         if sfp_id[0] in (0x0D, 0x11,):
             return QSFP_TYPE
         if sfp_id[0] in (0x18, 0x19, 0x1E,):
             return QSFP_DD_TYPE
-        return default_sfp_type
+        return UNKNOWN_SFP_TYPE
 
     def _init_port_type(self):
         self._port_type = UNKNOWN_PORT_TYPE
