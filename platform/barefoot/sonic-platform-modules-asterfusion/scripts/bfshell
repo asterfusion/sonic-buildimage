@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+SYNCD_INFO=$(docker ps | grep "docker-syncd-bfn" | grep syncd)
+SYNCD_RUNNING=false
+
+if [ ! -z "$SYNCD_INFO" ]; then
+    SYNCD_RUNNING=true
+fi
+
+if ! $SYNCD_RUNNING; then
+    echo ""
+    >&2 echo "Error: syncd container is not running. Unable to enter bfshell."
+    exit 1
+else
+    if ! docker exec -it syncd /opt/bfn/install/bin/bfshell; then
+        echo "Warning: switchd is not ready for connection. Please retry later."
+    fi
+fi

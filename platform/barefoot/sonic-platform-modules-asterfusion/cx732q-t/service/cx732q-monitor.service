@@ -1,5 +1,5 @@
 [Unit]
-Description=Setting up Asterfusion CX732Q
+Description=Setting up Asterfusion CX732Q-T
 After=sysinit.target
 Requires=systemd-modules-load.service
 After=systemd-modules-load.service
@@ -8,7 +8,7 @@ Before=sysvinit.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/local/bin/cx732q_monitor.sh start
+ExecStart=/usr/local/bin/cx732q_t_monitor.sh start
 
 [Install]
 WantedBy=multi-user.target

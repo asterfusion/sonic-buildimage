@@ -36,54 +36,12 @@ class Thermal(ThermalBase):
         self._update_thermal_data()
 
     def _init_thermal_name_list(self):
-        thermal_name_list = []
-        if self._device == DEVICE_X308PT:
-            if self._bdid in (
-                BOARD_ID_X308PT_V1DOT0,
-                BOARD_ID_X308PT_V1DOT1,
-                BOARD_ID_X308PT_V2DOT0,
-                BOARD_ID_X308PT_V3DOT0,
-            ):
-                thermal_name_list = copy.deepcopy(X308PT_V123_THERMAL_NAME_LIST)
-        elif self._device == DEVICE_X312PT:
-            if self._bdid in (
-                BOARD_ID_X312PT_V1DOT0,
-                BOARD_ID_X312PT_V1DOT1,
-                BOARD_ID_X312PT_V1DOT2,
-                BOARD_ID_X312PT_V2DOT0,
-            ):
-                thermal_name_list = copy.deepcopy(X312PT_V12_THERMAL_NAME_LIST)
-            elif self._bdid in (
-                BOARD_ID_X312PT_V1DOT3,
-                BOARD_ID_X312PT_V3DOT0,
-                BOARD_ID_X312PT_V4DOT0,
-                BOARD_ID_X312PT_V5DOT0,
-            ):
-                thermal_name_list = copy.deepcopy(X312PT_V345_THERMAL_NAME_LIST)
-        elif self._device == DEVICE_X532PT:
-            if self._bdid in (
-                BOARD_ID_X532PT_V1DOT0,
-                BOARD_ID_X532PT_V1DOT1,
-                BOARD_ID_X532PT_V2DOT0,
-                BOARD_ID_X532PT_V3DOT0,
-            ):
-                thermal_name_list = copy.deepcopy(X532PT_V12_THERMAL_NAME_LIST)
-        elif self._device == DEVICE_X564PT:
-            if self._bdid in (
-                BOARD_ID_X564PT_V1DOT0,
-                BOARD_ID_X564PT_V1DOT1,
-                BOARD_ID_X564PT_V1DOT2,
-            ):
-                thermal_name_list = copy.deepcopy(X564PT_V1_THERMAL_NAME_LIST)
-            elif self._bdid in (BOARD_ID_X564PT_V2DOT0,):
-                thermal_name_list = copy.deepcopy(X564PT_V2_THERMAL_NAME_LIST)
-        elif self._device == DEVICE_X732QT:
-            if self._bdid in (BOARD_ID_X732QT_V1DOT0,):
-                thermal_name_list = copy.deepcopy(X732QT_V1_THERMAL_NAME_LIST)
+        thermal_name_list = THERMAL_NAME.get(self._platform).get(self._bdid)
         self._thermal_index_range = len(thermal_name_list)
-        assert self._thermal_index_range != 0, "invalid thermal num"
-        thermal_name_list += self._api_helper.get_x86_thermal_names()
-        self._thermal_name_list = thermal_name_list
+        self._thermal_name_list = [
+            *thermal_name_list,
+            *self._api_helper.get_x86_thermal_names(),
+        ]
 
     def _init_thermal_extremum(self):
         self._minimum_recorded = NOT_AVAILABLE

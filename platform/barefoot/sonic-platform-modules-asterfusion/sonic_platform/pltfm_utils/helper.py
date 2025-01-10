@@ -8,6 +8,7 @@
 
 try:
     import itertools
+    import json
     import re
     import socket
     import subprocess
@@ -15,6 +16,7 @@ try:
     import time
 
     from functools import lru_cache
+    from pathlib import Path
     from subprocess import Popen
     from typing import Literal
 
@@ -79,7 +81,7 @@ class APIHelper(Logger):
                 break
             time.sleep(max(0, THRIFT_WAIT_TIMEOUT + timediff - time.time()))
         if not connectable or not invokable:
-            self.log_error("Failed in connecting to thrift server:( Exiting...")
+            self.log_fatal("Failed in connecting to thrift server:( Exiting...")
             sys.exit(1)
         self.log_debug("Succeeded in connecting to thrift server")
 
@@ -120,16 +122,16 @@ class APIHelper(Logger):
         assert platform is not None
         assert platform == get_platform()
         # Component
-        component = COMPONENT.get(device)
+        component = COMPONENT_INFO.get(platform).get(bdid)
         assert component is not None
         num_component = component.get("NUM")
         # Peripheral
-        peripheral = PERIPHERAL.get(bdid)
+        peripheral = PERIPHERAL_NUM.get(platform).get(bdid)
         assert peripheral is not None
         # Fan
         fan = peripheral.get("FAN")
         assert fan is not None
-        num_fan_drawer = fan.get("DRAWER")
+        num_fan_drawer = fan.get("DRAWER_NUM")
         num_fan_per_drawer = fan.get("NUM")
         # Psu
         psu = peripheral.get("PSU")
@@ -143,8 +145,8 @@ class APIHelper(Logger):
         thermal = peripheral.get("THERMAL")
         assert thermal is not None
         num_thermal = thermal.get("NUM")
-        num_core_x86_thermal = self.get_x86_thermal_num()
-        num_thermal += num_core_x86_thermal
+        num_x86_thermal = self.get_x86_thermal_num()
+        num_thermal += num_x86_thermal
         return (
             bdid,
             device,
@@ -165,48 +167,40 @@ class APIHelper(Logger):
     @lru_cache(maxsize=16)
     def get_x86_thermal_info(self, _=None):
         # type: (int | None) -> dict[str, dict[str, float]]
-        if self.check_if_host():
-            sensor_result = self.get_pmon_result(
-                PMON_SENSORS_CMD, round(time.time() / LRU_CACHE_TTL)
-            ).splitlines()
-        else:
+        if self.inside_docker_container():
             sensor_result = self.get_cmd_result(
                 PMON_SENSORS_CMD, round(time.time() / LRU_CACHE_TTL)
-            ).splitlines()
-        filter_pattern = r"\+?-?[0-9]+\.[0-9]*|\+?-?[0-9]+ C"
-        filtered_result = tuple(
-            filter(
-                lambda output: re.search(filter_pattern, output) is not None,
-                sensor_result,
             )
-        )
-        keys = tuple(
-            map(
-                lambda output: tuple(
-                    itertools.chain(["temp"], re.findall(r"high|crit", output))
-                ),
-                filtered_result,
+        else:
+            sensor_result = self.get_pmon_result(
+                PMON_SENSORS_CMD, round(time.time() / LRU_CACHE_TTL)
             )
-        )
-        values = tuple(
-            map(
-                lambda output: tuple(
-                    map(lambda value: float(value), re.findall(filter_pattern, output))
-                ),
-                filtered_result,
-            )
-        )
-        assert len(keys) == len(values), "unmatched thermal keys and values num"
-        thermal_names = list(
-            map(lambda output: output.split(": ")[0].title(), filtered_result)
-        )
-        thermal_values = (
-            dict(zip(keys[index], values[index])) for index in range(0, len(keys))
-        )
-        for index in range(0, len(thermal_names)):
-            if thermal_names[index].lower() == "temp1":
-                thermal_names[index] = "CPU Package"
-        return dict(zip(thermal_names, thermal_values))
+        sensor_data = json.loads(
+            sensor_result
+        )  # type: dict[str, dict[str, str | dict[str, str]]]
+        result = {}  # type: dict[str, dict[str, float]]
+        for sensor, sensor_info in sensor_data.items():
+            if type(sensor_info) is dict:
+                sensor_adapter = sensor_info.get("Adapter", None)
+                if sensor_adapter is not None:
+                    self.log_debug("Sensor adapter {}...".format(sensor_adapter))
+                for sensor, info in sensor_info.items():
+                    if sensor != sensor_adapter and type(info) is dict:
+                        if sensor.lower() == "temp1":
+                            sensor = "CPU Package"
+                        result[sensor] = {}
+                        for key in info:
+                            if key.endswith("input"):
+                                result[sensor]["temp"] = float(info[key])
+                            elif key.endswith("max"):
+                                result[sensor]["high"] = float(info[key])
+                            elif key.endswith("crit"):
+                                result[sensor]["crit_high"] = float(info[key])
+            else:
+                self.log_debug(
+                    "Retrieving temperature data of sensor {}...".format(sensor)
+                )
+        return result
 
     def get_x86_thermal_num(self):
         # type: () -> int
@@ -316,14 +310,13 @@ class APIHelper(Logger):
         return True
 
     @lru_cache(maxsize=16)
-    def check_if_host(self):
+    def inside_docker_container(self):
         # type: () -> bool
         # A process cannot be both in host and docker container.
         # Thus caching the result to accelerate this method.
-        try:
-            subprocess.call(
-                HOST_CHK_CMD, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-            )
-            return True  # type: bool
-        except FileNotFoundError as err:
-            return False
+        cgroup = Path("/proc/self/cgroup")
+        return (
+            Path("/.dockerenv").is_file()
+            or cgroup.is_file()
+            and "docker" in cgroup.read_text()
+        )
