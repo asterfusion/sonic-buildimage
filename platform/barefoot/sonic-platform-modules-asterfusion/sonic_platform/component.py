@@ -31,8 +31,7 @@ class Component(ComponentBase):
         self._init_component_version()
 
     def _init_component_info(self):
-        component_info = COMPONENT.get(self._device)
-        assert component_info is not None, "invalid component info list"
+        component_info = COMPONENT_INFO.get(self._platform).get(self._bdid)
         component_info_list = component_info.get("INFO")
         self._component_info = component_info_list[self._component_index - 1]
         self._api_helper.log_debug(
@@ -43,7 +42,6 @@ class Component(ComponentBase):
         self._version = self._api_helper.get_component_version(
             self._component_info.get("type"), self._component_info.get("target")
         )
-        assert self._version != None, "invalid component version"
         self._api_helper.log_debug(
             "Retrieved version of component {}".format(self.get_name())
         )

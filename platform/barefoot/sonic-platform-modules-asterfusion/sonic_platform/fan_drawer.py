@@ -39,64 +39,10 @@ class FanDrawer(FanDrawerBase):
         self._init_fan_list()
 
     def _init_fan_drawer_name_list(self):
-        self._fan_drawer_name_list = []
-        if self._device == DEVICE_X308PT:
-            if self._bdid in (
-                BOARD_ID_X308PT_V1DOT0,
-                BOARD_ID_X308PT_V1DOT1,
-                BOARD_ID_X308PT_V2DOT0,
-                BOARD_ID_X308PT_V3DOT0,
-            ):
-                self._fan_drawer_name_list = copy.deepcopy(
-                    X308PT_V12_FAN_DRAWER_NAME_LIST
-                )
-            elif self._bdid in (BOARD_ID_X308PT_V3DOT0,):
-                self._fan_drawer_name_list = copy.deepcopy(
-                    X308PT_V3_FAN_DRAWER_NAME_LIST
-                )
-        elif self._device == DEVICE_X312PT:
-            if self._bdid in (
-                BOARD_ID_X312PT_V1DOT0,
-                BOARD_ID_X312PT_V1DOT1,
-                BOARD_ID_X312PT_V1DOT2,
-                BOARD_ID_X312PT_V2DOT0,
-                BOARD_ID_X312PT_V1DOT3,
-                BOARD_ID_X312PT_V3DOT0,
-                BOARD_ID_X312PT_V4DOT0,
-                BOARD_ID_X312PT_V5DOT0,
-            ):
-                self._fan_drawer_name_list = copy.deepcopy(
-                    X312PT_V12345_FAN_DRAWER_NAME_LIST
-                )
-        elif self._device == DEVICE_X532PT:
-            if self._bdid in (
-                BOARD_ID_X532PT_V1DOT0,
-                BOARD_ID_X532PT_V1DOT1,
-                BOARD_ID_X532PT_V2DOT0,
-                BOARD_ID_X532PT_V3DOT0,
-            ):
-                self._fan_drawer_name_list = copy.deepcopy(
-                    X532PT_V12_FAN_DRAWER_NAME_LIST
-                )
-        elif self._device == DEVICE_X564PT:
-            if self._bdid in (
-                BOARD_ID_X564PT_V1DOT0,
-                BOARD_ID_X564PT_V1DOT1,
-                BOARD_ID_X564PT_V1DOT2,
-                BOARD_ID_X564PT_V2DOT0,
-            ):
-                self._fan_drawer_name_list = copy.deepcopy(
-                    X564PT_V12_FAN_DRAWER_NAME_LIST
-                )
-        elif self._device == DEVICE_X732QT:
-            if self._bdid in (BOARD_ID_X732QT_V1DOT0,):
-                self._fan_drawer_name_list = copy.deepcopy(
-                    X732QT_V1_FAN_DRAWER_NAME_LIST
-                )
-        assert len(self._fan_drawer_name_list) != 0, "invalid fan drawer name list"
+        self._fan_drawer_name_list = FAN_DRAWER_NAME.get(self._platform).get(self._bdid)
 
     def _init_fan_num_per_drawer(self):
-        self._fan_num_per_drawer = PERIPHERAL.get(self._bdid).get("FAN").get("NUM")
+        self._fan_num_per_drawer = PERIPHERAL_NUM.get(self._platform).get(self._bdid).get("FAN").get("NUM")
 
     def _init_fan_list(self):
         for fan_index in range(0, self._fan_num_per_drawer):

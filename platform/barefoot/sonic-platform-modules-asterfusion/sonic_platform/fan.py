@@ -41,71 +41,12 @@ class Fan(FanBase):
         self._update_fan_data()
 
     def _init_fan_name_list(self):
-        self._fan_name_list = []
-        if self._device == DEVICE_X308PT:
-            if self._bdid in (
-                BOARD_ID_X308PT_V1DOT0,
-                BOARD_ID_X308PT_V1DOT1,
-                BOARD_ID_X308PT_V2DOT0,
-                BOARD_ID_X308PT_V3DOT0,
-            ):
-                self._fan_name_list = copy.deepcopy(X308PT_V12_FAN_NAME_LIST)
-            elif self._bdid in (BOARD_ID_X308PT_V3DOT0,):
-                self._fan_name_list = copy.deepcopy(X308PT_V3_FAN_NAME_LIST)
-        elif self._device == DEVICE_X312PT:
-            if self._bdid in (
-                BOARD_ID_X312PT_V1DOT0,
-                BOARD_ID_X312PT_V1DOT1,
-                BOARD_ID_X312PT_V1DOT2,
-                BOARD_ID_X312PT_V2DOT0,
-                BOARD_ID_X312PT_V1DOT3,
-                BOARD_ID_X312PT_V3DOT0,
-                BOARD_ID_X312PT_V4DOT0,
-                BOARD_ID_X312PT_V5DOT0,
-            ):
-                self._fan_name_list = copy.deepcopy(X312PT_V12345_FAN_NAME_LIST)
-        elif self._device == DEVICE_X532PT:
-            if self._bdid in (
-                BOARD_ID_X532PT_V1DOT0,
-                BOARD_ID_X532PT_V1DOT1,
-                BOARD_ID_X532PT_V2DOT0,
-                BOARD_ID_X532PT_V3DOT0,
-            ):
-                self._fan_name_list = copy.deepcopy(X532PT_V12_FAN_NAME_LIST)
-        elif self._device == DEVICE_X564PT:
-            if self._bdid in (
-                BOARD_ID_X564PT_V1DOT0,
-                BOARD_ID_X564PT_V1DOT1,
-                BOARD_ID_X564PT_V1DOT2,
-                BOARD_ID_X564PT_V2DOT0,
-            ):
-                self._fan_name_list = copy.deepcopy(X564PT_V12_FAN_NAME_LIST)
-        elif self._device == DEVICE_X732QT:
-            if self._bdid in (BOARD_ID_X732QT_V1DOT0,):
-                self._fan_name_list = copy.deepcopy(X732QT_V1_FAN_NAME_LIST)
-        assert len(self._fan_name_list) != 0, "invalid fan name list"
+        self._fan_name_list = FAN_UNIT_NAME.get(self._platform).get(self._bdid)
 
     def _init_fan_limit_info(self):
-        if self._device == DEVICE_X308PT:
-            self._fan_max_inlet = X308PT_FAN_MAX_INLET
-            self._fan_max_outlet = X308PT_FAN_MAX_OUTLET
-        elif self._device == DEVICE_X312PT:
-            self._fan_max_inlet = X312PT_FAN_MAX_INLET
-            self._fan_max_outlet = X312PT_FAN_MAX_OUTLET
-        elif self._device == DEVICE_X532PT:
-            self._fan_max_inlet = X532PT_FAN_MAX_INLET
-            self._fan_max_outlet = X532PT_FAN_MAX_OUTLET
-        elif self._device == DEVICE_X564PT:
-            self._fan_max_inlet = X564PT_FAN_MAX_INLET
-            self._fan_max_outlet = X564PT_FAN_MAX_OUTLET
-        elif self._device == DEVICE_X732QT:
-            self._fan_max_inlet = X732QT_FAN_MAX_INLET
-            self._fan_max_outlet = X732QT_FAN_MAX_OUTLET
-        else:
-            self._fan_max_inlet = 0
-            self._fan_max_outlet = 0
-        assert self._fan_max_inlet != 0, "invalid max fan inlet rpm"
-        assert self._fan_max_outlet != 0, "invalid max fan outlet rpm"
+        fan_rpm_limit = FAN_RPM_LIMIT.get(self._platform).get(self._bdid)
+        self._fan_max_inlet = fan_rpm_limit.get("MAX_INLET")
+        self._fan_max_outlet = fan_rpm_limit.get("MAX_OUTLET")
 
     def _update_fan_presence(self):
         with self._api_helper.thrift_client() as client:

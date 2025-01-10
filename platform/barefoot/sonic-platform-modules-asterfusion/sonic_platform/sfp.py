@@ -36,12 +36,9 @@ class Sfp(SfpOptoeBase):
         # Init index
         self._sfp_index = sfp_index
         self._sfp_presence = False
-        # Init port type
-        self._init_port_type()
-        # Init port position
-        self._init_port_pos()
+        # Init port info
+        self._init_port_info()
         # Init sfp data
-        self._init_port_name()
         self._update_sfp_presence()
         self._update_sfp_data()
 
@@ -64,67 +61,35 @@ class Sfp(SfpOptoeBase):
             return QSFP_DD_TYPE
         return UNKNOWN_SFP_TYPE
 
-    def _init_port_type(self):
+    def _init_port_info(self):
         self._port_type = UNKNOWN_PORT_TYPE
-        sfp_index_type_list = None
-        if self._device == DEVICE_X308PT:
-            sfp_index_type_list = X308PT_PORT_INDEX_TYPE
-        elif self._device == DEVICE_X312PT:
-            sfp_index_type_list = X312PT_PORT_INDEX_TYPE
-        elif self._device == DEVICE_X532PT:
-            sfp_index_type_list = X532PT_PORT_INDEX_TYPE
-        elif self._device == DEVICE_X564PT:
-            sfp_index_type_list = X564PT_PORT_INDEX_TYPE
-        elif self._device == DEVICE_X732QT:
-            sfp_index_type_list = X732QT_PORT_INDEX_TYPE
-        assert sfp_index_type_list is not None, "invalid index type list"
-        for start, end, type in sfp_index_type_list:
-            if self._sfp_index in range(start, end):
-                self._port_type = type
-        assert self._port_type != UNKNOWN_PORT_TYPE, "unknown port type"
-
-    def _init_port_pos(self):
         self._port_pos = 0
-        sfp_index_type_list = None
-        sfp_index_seg_diff = 0
-        if self._device == DEVICE_X308PT:
-            sfp_index_type_list = X308PT_PORT_INDEX_TYPE
-        elif self._device == DEVICE_X312PT:
-            sfp_index_type_list = X312PT_PORT_INDEX_TYPE
-        elif self._device == DEVICE_X532PT:
-            sfp_index_type_list = X532PT_PORT_INDEX_TYPE
-        elif self._device == DEVICE_X564PT:
-            sfp_index_type_list = X564PT_PORT_INDEX_TYPE
-        elif self._device == DEVICE_X732QT:
-            sfp_index_type_list = X732QT_PORT_INDEX_TYPE
-        assert sfp_index_type_list is not None, "invalid index type list"
-        for start, end, _ in sfp_index_type_list:
-            if self._sfp_index in range(start, end):
-                if self._port_type == DPU_PORT_TYPE:
-                    self._port_pos = DPU_PORT_POSITION
+        self._port_name = "Unknown"
+        sfp_index_pos_type_list = PORT_INDEX_POS_TYPE.get(self._platform).get(self._bdid)
+        for index_start, index_end, pos_start, pos_end, port_type in sfp_index_pos_type_list:
+            if self._sfp_index in range(index_start, index_end):
+                self._port_type = port_type
+                if self._port_type != DPU_PORT_TYPE:
+                    self._port_pos = range(pos_start, pos_end)[self._sfp_index - index_start]
                 else:
-                    self._port_pos = self._sfp_index + 1 - sfp_index_seg_diff
-            sfp_index_seg_diff = end - start
-        assert self._port_pos != 0, "invalid port position"
-
-    def _init_port_name(self):
-        if self._api_helper.check_if_host():
+                    self._port_pos = DPU_PORT_POSITION
+        if self._api_helper.inside_docker_container():
+            platform_json_path = Path(HWSKU_ROOT, "platform.json")
+            port_config_path = Path(HWSKU_ROOT, "port_config.ini")
+        else:
             platform_json_path = Path(
                 DEVICE_ROOT, self._platform, self._device, "platform.json"
             )
             port_config_path = Path(
                 DEVICE_ROOT, self._platform, self._device, "port_config.ini"
             )
-        else:
-            platform_json_path = Path(HWSKU_ROOT, "platform.json")
-            port_config_path = Path(HWSKU_ROOT, "port_config.ini")
         sfputil_helper = SfpUtilHelper()
         if platform_json_path.exists():
             sfputil_helper.read_porttab_mappings(platform_json_path.as_posix())
         elif port_config_path.exists():
             sfputil_helper.read_porttab_mappings(port_config_path.as_posix())
-        self._port_name = sfputil_helper.logical
-        assert self._port_name != [], "invalid port name"
+        if len(sfputil_helper.logical) > self._sfp_index:
+            self._port_name = sfputil_helper.logical[self._sfp_index]
 
     def _update_sfp_presence(self):
         self._sfp_presence = False
@@ -290,6 +255,16 @@ class Sfp(SfpOptoeBase):
                 )
         return LPMODE_UNSUPPORTED
 
+    def get_error_description(self):
+        self._update_sfp_presence()
+        if not self._sfp_presence:
+            return ERROR_DESCRIPTION_UNPLUGGED
+        api = self.get_xcvr_api()
+        handler = getattr(api, "get_error_description", None)
+        if handler is not None:
+            return handler()
+        return ERROR_DESCRIPTION_OK
+
     def reset(self):
         """
         Reset SFP and return all user module settings to their default srate.
@@ -406,7 +381,7 @@ class Sfp(SfpOptoeBase):
             Returns:
             string: The name of the device
         """
-        return self._port_name[self._sfp_index] or "Unknown"
+        return self._port_name
 
     def get_presence(self):
         """

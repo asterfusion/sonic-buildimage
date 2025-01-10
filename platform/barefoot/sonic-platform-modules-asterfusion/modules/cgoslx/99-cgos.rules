@@ -1,0 +1,3 @@
+# congatec CGOS driver module permissions  
+
+KERNEL=="cgos", MODE="0666"

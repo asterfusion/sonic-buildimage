@@ -5,18 +5,7 @@ cfgfile="/usr/share/sonic/device/x86_64-asterfusion_cx308p_48y_t-r0/platform.con
 # cfgfile="/usr/share/sonic/device/x86_64-asterfusion_cx312p_48y_t-r0/platform.conf"
 # cfgfile="/usr/share/sonic/device/x86_64-asterfusion_cx532p_t-r0/platform.conf"
 # cfgfile="/usr/share/sonic/device/x86_64-asterfusion_cx564p_t-r0/platform.conf"
-
-function check_config_existence() {
-    # Color unicode-escape code
-    local yellow='\E[1;33m'
-    local res="\E[0m"
-    if [ -f $cfgfile ]; then
-        echo -e "${yellow}Warning${res}: We found that the $cfgfile already exists and no new configuration file will be generated."
-        echo -e "${yellow}Warning${res}: The purpose of this prompt is to take into account that your system may have worked fine in the past."
-        echo -e "${yellow}Warning${res}: If you want to generate a new configuration file, delete the old one first."
-        exit 0
-    fi
-}
+# cfgfile="/usr/share/sonic/device/x86_64-asterfusion_cx732q_t-r0/platform.conf"
 
 function get_from_bmc_with_delay() {
     result=$(bmc_get $@)
@@ -25,11 +14,36 @@ function get_from_bmc_with_delay() {
 }
 
 function generate_platform_config() {
+    # Color unicode-escape code
+    local red="\E[1;31m"
+    local yellow="\E[1;33m"
+    local res="\E[0m"
+    if [[ "$1" = "force" ]]; then
+        echo -e "${yellow}Warning:${res} The $cfgfile will be removed before forcely re-generating a new one."
+        echo -e "${yellow}Warning:${res} There is a risk that the system will not function properly after this operation is completed."
+        rm -f $cfgfile
+    fi
+    if [ -f $cfgfile ]; then
+        if grep -q "read failed" $cfgfile || grep -q "N/A" $cfgfile; then
+            echo -e "${yellow}Warning:${res} The $cfgfile contains uncorrected errors and will be re-generated."
+            echo -e "${yellow}Warning:${res} The $cfgfile will be removed before forcely re-generating a new one."
+            rm -f $cfgfile
+        else
+            echo -e "${red}Error:${res} We found that the $cfgfile already exists and no new configuration file will be generated."
+            echo -e "${red}Error:${res} If you want to generate a new configuration file, pass -f parameters to this script."
+            return
+        fi
+    fi
+    if docker ps | grep syncd; then
+        echo -e "${yellow}Warning:${res} There is a risk of configuration file generation failure due to running syncd container."
+        echo -e "${yellow}Warning:${res} Please manually stop syncd container and retry generating configuration file if it fails."
+    fi
     # Useful variables
     default_cme="CME3000"
     default_i2c="255"
     hw_platform="N/A"
     hw_version="0"
+    bmc_version=""
     enable_uart=0
     enable_iic=1
     xt_platform=""
@@ -58,7 +72,10 @@ function generate_platform_config() {
                 xt_hwver=${xt_hwver%-*}
             fi
             hw_version=${xt_hwver: -3}
-            echo "BMC firmware version is $var1.$var2.$var3."
+            if [[ "$xt_hwver" = "APNS320T-C1-V1.0" ]]; then
+                hw_version="3.0"
+            fi
+            bmc_version="$var1.$var2.$var3"
         fi
     fi
 
@@ -121,6 +138,9 @@ function generate_platform_config() {
             if [[ $xt_cme =~ "08" ]]; then
                 default_cme="ADV1508"
             fi
+            if [[ $xt_cme =~ "48" ]]; then
+                default_cme="ADV1548"
+            fi
         fi
         if [[ $xt_cme =~ "S02" ]]; then
             default_cme="S021527"
@@ -133,7 +153,7 @@ function generate_platform_config() {
         fi
     fi
 
-    if [[ $xt_platform =~ "308" ]]; then
+    if [[ $xt_platform =~ "308" ]] || [[ $xt_platform =~ "3056" ]]; then
         enable_iic=0
         if [[ $default_cme =~ "CME3000" ]]; then
             i2c=$(i2cdetect -l | awk -F '[- ]' '/sio_smbus/{print $2}')
@@ -168,7 +188,18 @@ function generate_platform_config() {
         hw_platform="X564P-T"
     fi
 
-    echo "Generating $cfgfile ..."
+    if [[ $xt_platform =~ "732" ]]; then
+        enable_iic=0
+        if [[ $default_cme =~ "CME3000" ]]; then
+            i2c=`i2cdetect -l | awk -F '[ -]' '/sio_smbus/{print $2}'`
+            default_i2c=${i2c:0:1}
+            enable_iic=1
+        fi
+        hw_platform="X732Q-T"
+    fi
+
+    echo "================================ Generating $cfgfile ... ================================"
+    echo "Platform: $hw_platform, BMC Firmware Version: $bmc_version, Hardware Version: $hw_version, COM-Express: $default_cme"
     {
         echo "# Generated platform.conf by xt-cfgen.sh"
         echo ""
@@ -187,21 +218,22 @@ function generate_platform_config() {
         echo "# Currently supported COM-Express listed below:"
         echo "#   1. CG1508 (Default)"
         echo "#   2. CG1527"
-        echo "#   3. ADV1508"
-        echo "#   4. ADV1527"
-        echo "#   5. S021508"
-        echo "#   6. S021527"
-        echo "#   7. CME3000"
-        echo "#   8. CME7000"
+        echo "#   3. ADV1548"
+        echo "#   4. ADV1508"
+        echo "#   5. ADV1527"
+        echo "#   6. S021508"
+        echo "#   7. S021527"
+        echo "#   8. CME3000"
+        echo "#   9. CME7000"
         echo "com-e:$default_cme"
         echo ""
         echo "# Master I2C which is used to access CPLD and/or BMC."
         echo "#"
-        echo "#             [X312P-T V3.0 and later]      [X308P-T]           [X532P-T/X564P-T]"
-        echo "#                      |                       |                        |"
-        echo "#  BMC          <---- nct6779d          <---- UART               <---- UART"
-        echo "#  CPLD         <---- nct6779d          <---- cp2112             <---- cp2112"
-        echo "#  Transceiver  <---- cp2112            <---- cp2112             <---- cp2112"
+        echo "#                 [X312P-T V3.0 and later]    [X308P-T/3056XT]    [X532P-T/X564P-T]      [X732Q-T]"
+        echo "#                            |                        |                   |                  |"
+        echo "#  BMC                 <---- nct6779d           <---- UART          <---- UART         <---- UART"
+        echo "#  CPLD                <---- nct6779d           <---- cp2112        <---- cp2112       <---- CP2112"
+        echo "#  Transceiver         <---- cp2112             <---- cp2112        <---- cp2112       <---- CP2112"
         echo "#"
         echo "# Details"
         echo "# For X532P-T/X564P-T with ComExpress CG15xx serials, i2c-127 means CPLD forcely accessed through cgosdrv (transition scenarios)."
@@ -212,6 +244,7 @@ function generate_platform_config() {
         echo "# For X564P-T V2.0, CPLD can be and only can be accessed by cp2112."
         echo "# For X312P-T V1.0, nct6779d is used to access BMC/CPLD/Transceiver."
         echo "# For X312P-T V2.0, cp2112 is used to access BMC/CPLD/Transceiver."
+        echo "# For X732Q-T V1.0, CPLD can be and only can be accessed by cp2112."
         if [ $enable_iic = 1 ]; then
             echo "i2c:$default_i2c"
         else
@@ -227,17 +260,27 @@ function generate_platform_config() {
             echo "#uart:/dev/ttyS1"
         fi
         echo ""
+        echo "# Interface or IP address for Thrift RPC Server to listen to wait for valid connections."
+        echo "# By default, for secure concern, BSP waits connections by listening loopback interface,"
+        echo "# which will prevents connections from others till user changes it to external one."
+        echo "# The valid value of this parameter can either be, for example, lo/ma1/enps0f0/... or be a real IP address."
+        echo "# rpc-listen-point:127.0.0.1"
+        echo "# rpc-listen-point:lo"
+        echo "# rpc-listen-point:10.240.4.50"
+        echo "# rpc-listen-point:ma1"
+        echo "rpc-listen-point:127.0.0.1"
+        echo ""
     } > $cfgfile
-    echo "Generating $cfgfile done."
+    echo "=============================== Generating $cfgfile done. ==============================="
 }
 
 function get_bmc_mac_address() {
-    mac_cache="/var/cache/sonic/system-macaddr/macaddr_cache"
+    mac_cache="/var/cache/sonic/system-macaddress/macaddress_cache"
     if [ ! -e $mac_cache ]; then
         mac_addr=$(get_from_bmc_with_delay 0x01 0x24 0xaa)
         echo "$mac_addr" > $mac_cache
     fi
-    if [[ "$1" = "-r" ]]; then
+    if [[ "$1" = "read" ]]; then
         cat "$mac_cache"
     fi
 }
@@ -249,26 +292,29 @@ function display_help_information() {
     echo ""
     echo "optional arguments:"
     echo "-h    show this help message and exit"
-    echo "-p    generate platform.conf under platform device directory"
+    echo "-p    generate platform.conf under platform directory"
+    echo "-f    forcely re-generate platform.conf under platform directory"
     echo "-m    generate bmc mac address under /var/cache/sonic/"
-    echo "-r    generate and print bmc mac address"
+    echo "-r    generate bmc mac address and print it to screen"
     exit 0
 }
 
-while getopts ":hpmr" opt; do
+while getopts ":hpfmr" opt; do
     case $opt in 
         h)
             display_help_information
             ;;
         p)
-            check_config_existence
             generate_platform_config
+            ;;
+        f)
+            generate_platform_config force
             ;;
         m)
             get_bmc_mac_address
             ;;
         r)
-            get_bmc_mac_address -r
+            get_bmc_mac_address read
             ;;
     esac
 done

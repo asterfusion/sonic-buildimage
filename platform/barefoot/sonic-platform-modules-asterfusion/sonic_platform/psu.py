@@ -39,7 +39,7 @@ class Psu(PsuBase):
         self._update_psu_data()
 
     def _init_psu_name_list(self):
-        self._psu_name_list = copy.deepcopy(PSU_NAME_LIST)
+        self._psu_name_list = copy.deepcopy(PSU_NAME)
 
     def _update_psu_presence(self):
         with self._api_helper.thrift_client() as client:

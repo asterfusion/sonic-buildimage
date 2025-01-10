@@ -44,12 +44,12 @@ class Logger(object):
         funcname = caller.function
         return "{}:{} {} - {}".format(filename, lineno, funcname, msg)
 
-    def log_critical(self, msg, *args, **kwargs):
+    def log_fatal(self, msg, *args, **kwargs):
         # type: (str, object, object) -> None
         caller = getframeinfo(stack()[1][0])
         msg = self._inject_caller_info(caller, msg)
         stack_info = kwargs.get("stack_info", LOGGING_STACK_INFO)
-        logging.critical(msg, stack_info=stack_info, *args, **kwargs)
+        logging.fatal(msg, stack_info=stack_info, *args, **kwargs)
 
     def log_error(self, msg, *args, **kwargs):
         # type: (str, object, object) -> None
@@ -57,13 +57,6 @@ class Logger(object):
         msg = self._inject_caller_info(caller, msg)
         stack_info = kwargs.get("stack_info", LOGGING_STACK_INFO)
         logging.error(msg, stack_info=stack_info, *args, **kwargs)
-
-    def log_exception(self, msg, *args, **kwargs):
-        # type: (str, object, object) -> None
-        caller = getframeinfo(stack()[1][0])
-        msg = self._inject_caller_info(caller, msg)
-        stack_info = kwargs.get("stack_info", LOGGING_STACK_INFO)
-        logging.exception(msg, stack_info=stack_info, *args, **kwargs)
 
     def log_warning(self, msg, *args, **kwargs):
         # type: (str, object, object) -> None
